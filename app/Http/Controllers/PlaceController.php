@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\PlaceService;
 use Illuminate\Http\JsonResponse;
@@ -22,12 +21,15 @@ class PlaceController extends Controller
     {
         try {
             $query = $request->query('q');
-
             $places = $query
                 ? $this->placeService->searchPlaces($query)
                 : $this->placeService->getAllPlaces();
 
-            return response()->json($places, 200);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Places retrieved successfully.',
+                'data' => $places,
+            ], 200);
         } catch (Exception $e) {
             return $this->errorResponse('Failed to load places.', $e);
         }
@@ -44,9 +46,14 @@ class PlaceController extends Controller
 
             $place = $this->placeService->createPlace($validated);
 
-            return response()->json($place, 201);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Place created successfully.',
+                'data' => $place,
+            ], 201);
         } catch (ValidationException $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Validation error.',
                 'errors' => $e->errors()
             ], 422);
@@ -61,10 +68,18 @@ class PlaceController extends Controller
             $place = $this->placeService->getPlaceById($id);
 
             if (!$place) {
-                return response()->json(['message' => 'Place not found.'], 404);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Place not found.',
+                    'data' => null
+                ], 404);
             }
 
-            return response()->json($place, 200);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Place retrieved successfully.',
+                'data' => $place,
+            ], 200);
         } catch (Exception $e) {
             return $this->errorResponse('Failed to retrieve place.', $e);
         }
@@ -74,12 +89,20 @@ class PlaceController extends Controller
     {
         try {
             $place = $this->placeService->getPlaceBySlug($slug);
-    
+
             if (!$place) {
-                return response()->json(['message' => 'Place not found.'], 404);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Place not found.',
+                    'data' => null
+                ], 404);
             }
-    
-            return response()->json($place, 200);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Place retrieved successfully.',
+                'data' => $place,
+            ], 200);
         } catch (Exception $e) {
             return $this->errorResponse('Failed to retrieve place by slug.', $e);
         }
@@ -97,15 +120,21 @@ class PlaceController extends Controller
             $updatedPlace = $this->placeService->updatePlace($id, $validated);
 
             if (!$updatedPlace) {
-                return response()->json(['message' => 'Place not found or not updated.'], 404);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Place not found or not updated.',
+                    'data' => null
+                ], 404);
             }
 
             return response()->json([
+                'status' => 'success',
                 'message' => 'Place updated successfully.',
-                'data' => $updatedPlace
+                'data' => $updatedPlace,
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Validation error.',
                 'errors' => $e->errors()
             ], 422);
@@ -117,15 +146,20 @@ class PlaceController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $deletedPlace = $this->placeService->deletePlace($id);
+            $deleted = $this->placeService->deletePlace($id);
 
-            if (!$deletedPlace) {
-                return response()->json(['message' => 'Place not found.'], 404);
+            if (!$deleted) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Place not found.',
+                    'data' => null
+                ], 404);
             }
 
             return response()->json([
+                'status' => 'success',
                 'message' => 'Place deleted successfully.',
-                'data' => ['id' => $id]
+                'data' => ['id' => $id],
             ], 200);
         } catch (Exception $e) {
             return $this->errorResponse('Failed to delete place.', $e);
@@ -135,6 +169,7 @@ class PlaceController extends Controller
     protected function errorResponse(string $message, Exception $e): JsonResponse
     {
         return response()->json([
+            'status' => 'error',
             'message' => $message,
             'error' => $e->getMessage(),
         ], 500);
